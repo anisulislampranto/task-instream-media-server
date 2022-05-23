@@ -10,6 +10,7 @@ const port = process.env.PORT || 4040;
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.9uobc.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
 
+// middleware
 app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
@@ -30,12 +31,15 @@ async function run() {
     const db = client.db();
     const customersCollection = db.collection("customers");
 
+    // get api for all customers from db
     app.get("/customers", async (req, res) => {
       const cursor = customersCollection.find({});
       const customers = await cursor.toArray();
+      // when argument is not a JSON object res.json will ensure it to sent res as json
       res.json(customers);
     });
 
+    // post api to add specific customer data to db
     app.post("/addCustomer", async (req, res) => {
       const name = req.body.name;
       const email = req.body.email;
@@ -58,12 +62,15 @@ async function run() {
 
       const result = await customersCollection.insertOne(customer);
       console.log(result);
+      // when argument is not a JSON object res.json will ensure it to sent res as json
       res.json(result);
     });
 
+    // dynamic api for indedtifying specific customer and update that customer info
     app.put("/customers/update/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
+      // update and insert = upsert || will ensure if matches not found will insert as new
       const options = { upsert: true };
       const updatedName = req.body.name;
       const updatedAge = req.body.age;
@@ -86,10 +93,13 @@ async function run() {
         },
       };
       const result = await customersCollection.updateOne(
+        // filtering customer by object id
         filter,
         updateCustomerInfo,
+        // if dont find any data by filtering will insert as a new
         options
       );
+      // when argument is not a JSON object res.json will ensure it to sent res as json object
       res.json(result);
     });
   } catch (error) {
